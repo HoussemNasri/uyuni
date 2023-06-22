@@ -82,6 +82,9 @@ import com.redhat.rhn.domain.task.Task;
 
 import com.suse.manager.model.maintenance.MaintenanceCalendar;
 import com.suse.manager.model.maintenance.MaintenanceSchedule;
+import com.suse.oval.db.OVALDefinition;
+import com.suse.oval.db.OVALPlatform;
+import com.suse.oval.db.OVALReference;
 
 import java.util.List;
 
@@ -163,7 +166,10 @@ public class AnnotationRegistry {
         RecurringState.class,
         RecurringConfigChannel.class,
         RecurringInternalState.class,
-        InternalState.class
+        InternalState.class,
+        OVALDefinition.class,
+        OVALPlatform.class,
+        OVALReference.class
     );
 
     /**
