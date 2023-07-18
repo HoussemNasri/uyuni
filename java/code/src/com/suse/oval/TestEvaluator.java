@@ -2,26 +2,45 @@ package com.suse.oval;
 
 import com.redhat.rhn.domain.rhnpackage.PackageEvr;
 import com.redhat.rhn.domain.rhnpackage.PackageType;
+import com.redhat.rhn.domain.server.ServerConstants;
 import com.suse.oval.db.*;
 import com.suse.oval.ovaltypes.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class TestEvaluator {
+    private static final Pattern DEBIAN_OS_VERSION_REGEX = Pattern.compile(
+            "Debian\\s+GNU/Linux\\s+(?<osVersion>[0-9]+)\\s+is installed");
     private static final Logger LOG = LogManager.getLogger(TestEvaluator.class);
     private final Map<String, List<SystemPackage>> systemInstalledPackagesByName;
-    private final PackageType packageType;
+    private final PackageType systemPackageType;
+    private final String systemOS;
+    private final String systemOsRelease;
 
-    public TestEvaluator(Map<String, List<SystemPackage>> systemInstalledPackagesByName, PackageType packageType) {
+    public TestEvaluator(Map<String, List<SystemPackage>> systemInstalledPackagesByName, PackageType systemPackageType,
+                         String systemOs, String systemOsRelease) {
         this.systemInstalledPackagesByName = systemInstalledPackagesByName == null ? new HashMap<>() : systemInstalledPackagesByName;
-        this.packageType = packageType;
+        this.systemPackageType = systemPackageType;
+        this.systemOS = systemOs;
+        this.systemOsRelease = systemOsRelease;
+    }
+
+    public TestEvaluator(Map<String, List<SystemPackage>> installedPackagesMappedByName, PackageType systemPackageType) {
+        this(installedPackagesMappedByName, systemPackageType, "", "");
     }
 
     public boolean evaluate(OVALPackageTest packageTest) {
         LOG.error("Evaluating OVAL test '{}', comment '{}'", packageTest.getId(), packageTest.getComment());
+
+        Matcher matcher = DEBIAN_OS_VERSION_REGEX.matcher(packageTest.getComment());
+        if (matcher.matches()) {
+            return evaluateDebianOSVersion(matcher.group("osVersion"));
+        }
 
         if (packageTest.getPackageObject() == null) {
             throw new IllegalStateException();
@@ -63,6 +82,10 @@ public class TestEvaluator {
                 .collect(Collectors.toList());
 
         return combineBooleans(packageTest.getStateOperator(), stateEvaluations);
+    }
+
+    private boolean evaluateDebianOSVersion(String expectedOsVersion) {
+        return Objects.equals(systemOS, ServerConstants.DEBIAN) && Objects.equals(expectedOsVersion, systemOsRelease);
     }
 
     /**
