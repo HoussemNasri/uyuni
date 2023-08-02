@@ -31,10 +31,18 @@ import com.suse.manager.webui.utils.gson.ResultJson;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.suse.oval.OVALCachingFactory;
+import com.suse.oval.OsFamily;
+import com.suse.oval.OvalParser;
+import com.suse.oval.manager.OvalObjectManager;
+import com.suse.oval.manager.OvalStateManager;
+import com.suse.oval.manager.OvalTestManager;
+import com.suse.oval.ovaltypes.OvalRootType;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -130,6 +138,15 @@ public class CVEAuditController {
      * @return the result JSON object
      */
     public static Object cveAudit(Request req, Response res, User user) {
+        OvalParser ovalParser = new OvalParser();
+        OvalRootType rootType = ovalParser.parse(new File("/var/log/rhn/suse-affected.xml"));
+        // Initialize state, object, and test OVAL managers to be able to look them up by id efficiently
+        OvalStateManager ovalStateManager = new OvalStateManager(rootType.getStates().getStates());
+        OvalObjectManager ovalObjectManager = new OvalObjectManager(rootType.getObjects().getObjects());
+        OvalTestManager ovalTestManager = new OvalTestManager(rootType.getTests().getTests());
+
+        OVALCachingFactory.saveDefinitions_Optimized(rootType.getDefinitions(), OsFamily.SUSE_LINUX_ENTERPRISE_SERVER, "15");
+
         CVEAuditRequest cveAuditRequest = GSON.fromJson(req.body(), CVEAuditRequest.class);
         try {
 
