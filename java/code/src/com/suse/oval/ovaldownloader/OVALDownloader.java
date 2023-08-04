@@ -2,13 +2,14 @@ package com.suse.oval.ovaldownloader;
 
 import com.suse.oval.OsFamily;
 
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.NotImplementedException;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.zip.GZIPInputStream;
 
@@ -24,8 +25,17 @@ public class OVALDownloader {
             case openSUSE:
                 streamInfo = new OpenSUSEOVALStreamInfo(osVersion);
                 break;
+            case REDHAT_ENTERPRISE_LINUX:
+                streamInfo = new RedHatOVALStreamInfo(osVersion);
+                break;
+            case DEBIAN:
+                streamInfo = new DebianOVALStreamInfo(osVersion);
+                break;
+            case UBUNTU:
+                streamInfo = new UbuntuOVALStreamInfo(osVersion);
+                break;
             default:
-                throw new NotImplementedException("Not implemented for " + osFamily);
+                throw new NotImplementedException(String.format("Cannot download '%s' OVALs", osFamily));
         }
 
         if (!streamInfo.isValidVersion(osVersion)) {
@@ -39,13 +49,18 @@ public class OVALDownloader {
     public File doDownload(OVALStreamInfo streamInfo) throws IOException {
         URL remoteOVALFileURL = new URL(streamInfo.remoteFileUrl());
         File localOVALFile = new File(DOWNLOAD_PATH + streamInfo.localFileName() +
-                        streamInfo.getCompressionMethod().extension());
+                streamInfo.getCompressionMethod().extension());
 
         FileUtils.copyURLToFile(remoteOVALFileURL, localOVALFile, 5000, 5000);
 
-        if (streamInfo.getCompressionMethod() == OVALCompressionMethod.GZIP) {
+        OVALCompressionMethod compressionMethod = streamInfo.getCompressionMethod();
+        if (compressionMethod == OVALCompressionMethod.GZIP) {
             File uncompressedOVALFile = new File(DOWNLOAD_PATH + streamInfo.localFileName() + ".xml");
             decompressGzip(localOVALFile, uncompressedOVALFile);
+            localOVALFile = uncompressedOVALFile;
+        } else if (compressionMethod == OVALCompressionMethod.BZIP2) {
+            File uncompressedOVALFile = new File(DOWNLOAD_PATH + streamInfo.localFileName() + ".xml");
+            decompressBzip2(localOVALFile, uncompressedOVALFile);
             localOVALFile = uncompressedOVALFile;
         }
 
@@ -53,18 +68,24 @@ public class OVALDownloader {
     }
 
     /**
-     * Decompress {@code archive} into {@code target} file.
+     * Decompress the GZIP {@code archive} into {@code target} file.
      */
-    public static void decompressGzip(File archive, File target) throws IOException {
-        try (GZIPInputStream gis = new GZIPInputStream(new FileInputStream(archive));
-             FileOutputStream fos = new FileOutputStream(target)) {
+    private static void decompressGzip(File archive, File target) {
+        try (GZIPInputStream gis = new GZIPInputStream(new FileInputStream(archive))) {
+            FileUtils.copyToFile(gis, target);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to decompress GZIP archive", e);
+        }
+    }
 
-            // copy GZIPInputStream to FileOutputStream
-            byte[] buffer = new byte[1024];
-            int len;
-            while ((len = gis.read(buffer)) > 0) {
-                fos.write(buffer, 0, len);
-            }
+    /**
+     * Decompress the BZIP2 {@code archive} into {@code target} file.
+     */
+    private static void decompressBzip2(File archive, File target) {
+        try (InputStream inputStream = new BZip2CompressorInputStream(new FileInputStream(archive))) {
+            FileUtils.copyToFile(inputStream, target);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to decompress BZIP2 archive", e);
         }
     }
 }
