@@ -41,6 +41,7 @@ import com.suse.oval.manager.OvalTestManager;
 import com.suse.oval.ovaltypes.DefinitionClassEnum;
 import com.suse.oval.ovaltypes.DefinitionType;
 import com.suse.oval.ovaltypes.OvalRootType;
+import com.suse.oval.vulnerablepkgextractor.VulnerablePackagesExtractors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -148,14 +149,23 @@ public class CVEAuditController {
         OvalObjectManager ovalObjectManager = new OvalObjectManager(rootType.getObjects().getObjects());
         OvalTestManager ovalTestManager = new OvalTestManager(rootType.getTests().getTests());
 
-        for(DefinitionType def : rootType.getDefinitions().stream()
-                .filter(def -> def.getDefinitionClass() == DefinitionClassEnum.VULNERABILITY).collect(Collectors.toList())) {
-            if (def.getId().contains("unaffected")) {
+        List<DefinitionType> cleanDefinitions =
+                rootType.getDefinitions().stream()
+                        .filter(def -> !def.getId().contains("unaffected"))
+                        .peek(def -> {
+                            def.setOsFamily(OsFamily.REDHAT_ENTERPRISE_LINUX);
+                            def.setCve(def.getMetadata().getTitle());
+                            def.setOsVersion("8");
+                        }).collect(Collectors.toList());
+
+        for (DefinitionType definition : cleanDefinitions) {
+            if (definition.getId().contains("unaffected")) {
                 log.warn("Skipping unaffected definition...");
                 continue;
             }
-            log.warn("Waa " + def.getId());
-            log.warn(def.getMetadata().getAdvisory().get().getAffectedComponents());
+
+            log.warn("Definition '{}': {}", definition.getDefinitionClass(), definition.getId());
+            log.warn(VulnerablePackagesExtractors.create(definition, OsFamily.REDHAT_ENTERPRISE_LINUX).extract());
         }
 
 /*        TimeUtils.logTime(log, "Heyyy",
