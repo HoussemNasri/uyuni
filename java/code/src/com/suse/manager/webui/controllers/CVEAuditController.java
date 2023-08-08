@@ -38,6 +38,8 @@ import com.suse.oval.OvalParser;
 import com.suse.oval.manager.OvalObjectManager;
 import com.suse.oval.manager.OvalStateManager;
 import com.suse.oval.manager.OvalTestManager;
+import com.suse.oval.ovaltypes.DefinitionClassEnum;
+import com.suse.oval.ovaltypes.DefinitionType;
 import com.suse.oval.ovaltypes.OvalRootType;
 
 import org.apache.logging.log4j.LogManager;
@@ -140,15 +142,25 @@ public class CVEAuditController {
      */
     public static Object cveAudit(Request req, Response res, User user) {
         OvalParser ovalParser = new OvalParser();
-        OvalRootType rootType = ovalParser.parse(new File("/var/log/rhn/ovals/opensuse.leap-15.4.xml"));
+        OvalRootType rootType = ovalParser.parse(new File("/var/log/rhn/ovals/rhel-8.xml"));
         // Initialize state, object, and test OVAL managers to be able to look them up by id efficiently
         OvalStateManager ovalStateManager = new OvalStateManager(rootType.getStates().getStates());
         OvalObjectManager ovalObjectManager = new OvalObjectManager(rootType.getObjects().getObjects());
         OvalTestManager ovalTestManager = new OvalTestManager(rootType.getTests().getTests());
 
-        TimeUtils.logTime(log, "Heyyy",
+        for(DefinitionType def : rootType.getDefinitions().stream()
+                .filter(def -> def.getDefinitionClass() == DefinitionClassEnum.VULNERABILITY).collect(Collectors.toList())) {
+            if (def.getId().contains("unaffected")) {
+                log.warn("Skipping unaffected definition...");
+                continue;
+            }
+            log.warn("Waa " + def.getId());
+            log.warn(def.getMetadata().getAdvisory().get().getAffectedComponents());
+        }
+
+/*        TimeUtils.logTime(log, "Heyyy",
                 () -> OVALCachingFactory.savePlatformsVulnerablePackages(rootType.getDefinitions(),
-                        OsFamily.openSUSE_LEAP, "15.4"));
+                        OsFamily.openSUSE_LEAP, "15.4"));*/
 
         CVEAuditRequest cveAuditRequest = GSON.fromJson(req.body(), CVEAuditRequest.class);
         try {
