@@ -23,6 +23,7 @@ import static spark.Spark.get;
 import static spark.Spark.post;
 
 import com.redhat.rhn.common.localization.LocalizationService;
+import com.redhat.rhn.common.util.TimeUtils;
 import com.redhat.rhn.domain.user.User;
 import com.redhat.rhn.manager.audit.*;
 import com.redhat.rhn.manager.rhnset.RhnSetDecl;
@@ -139,13 +140,15 @@ public class CVEAuditController {
      */
     public static Object cveAudit(Request req, Response res, User user) {
         OvalParser ovalParser = new OvalParser();
-        OvalRootType rootType = ovalParser.parse(new File("/var/log/rhn/suse-affected.xml"));
+        OvalRootType rootType = ovalParser.parse(new File("/var/log/rhn/ovals/opensuse.leap-15.4.xml"));
         // Initialize state, object, and test OVAL managers to be able to look them up by id efficiently
         OvalStateManager ovalStateManager = new OvalStateManager(rootType.getStates().getStates());
         OvalObjectManager ovalObjectManager = new OvalObjectManager(rootType.getObjects().getObjects());
         OvalTestManager ovalTestManager = new OvalTestManager(rootType.getTests().getTests());
 
-        OVALCachingFactory.saveDefinitions_Optimized(rootType.getDefinitions(), OsFamily.SUSE_LINUX_ENTERPRISE_SERVER, "15");
+        TimeUtils.logTime(log, "Heyyy",
+                () -> OVALCachingFactory.savePlatformsVulnerablePackages(rootType.getDefinitions(),
+                        OsFamily.openSUSE_LEAP, "15.4"));
 
         CVEAuditRequest cveAuditRequest = GSON.fromJson(req.body(), CVEAuditRequest.class);
         try {
