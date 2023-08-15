@@ -144,33 +144,6 @@ public class CVEAuditController {
     public static Object cveAudit(Request req, Response res, User user) {
         OvalParser ovalParser = new OvalParser();
         OvalRootType rootType = ovalParser.parse(new File("/var/log/rhn/ovals/rhel-8.xml"));
-        // Initialize state, object, and test OVAL managers to be able to look them up by id efficiently
-        OvalStateManager ovalStateManager = new OvalStateManager(rootType.getStates().getStates());
-        OvalObjectManager ovalObjectManager = new OvalObjectManager(rootType.getObjects().getObjects());
-        OvalTestManager ovalTestManager = new OvalTestManager(rootType.getTests().getTests());
-
-        List<DefinitionType> cleanDefinitions =
-                rootType.getDefinitions().stream()
-                        .filter(def -> !def.getId().contains("unaffected"))
-                        .peek(def -> {
-                            def.setOsFamily(OsFamily.REDHAT_ENTERPRISE_LINUX);
-                            def.setCve(def.getMetadata().getTitle());
-                            def.setOsVersion("8");
-                        }).collect(Collectors.toList());
-
-        for (DefinitionType definition : cleanDefinitions) {
-            if (definition.getId().contains("unaffected")) {
-                log.warn("Skipping unaffected definition...");
-                continue;
-            }
-
-            log.warn("Definition '{}': {}", definition.getDefinitionClass(), definition.getId());
-            log.warn(VulnerablePackagesExtractors.create(definition, OsFamily.REDHAT_ENTERPRISE_LINUX).extract());
-        }
-
-/*        TimeUtils.logTime(log, "Heyyy",
-                () -> OVALCachingFactory.savePlatformsVulnerablePackages(rootType.getDefinitions(),
-                        OsFamily.openSUSE_LEAP, "15.4"));*/
 
         CVEAuditRequest cveAuditRequest = GSON.fromJson(req.body(), CVEAuditRequest.class);
         try {
