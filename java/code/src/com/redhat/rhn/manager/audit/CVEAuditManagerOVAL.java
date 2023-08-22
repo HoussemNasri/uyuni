@@ -101,14 +101,15 @@ public class CVEAuditManagerOVAL {
             CVEAuditSystemBuilder auditWithChannelsResult =
                     CVEAuditManager.doAuditSystem(clientServer.getId(), resultsBySystem.get(clientServer.getId()));
 
-            if (doesSupportOVALAuditing(clientServer)) {
-                systemAuditResult = doAuditSystem(cveIdentifier, resultsBySystem.get(clientServer.getId()),
-                        clientServer);
+            if (checkOVALAvailability(clientServer)) {
+                systemAuditResult = doAuditSystem(cveIdentifier, resultsBySystem.get(clientServer.getId()), clientServer);
                 systemAuditResult.setChannels(auditWithChannelsResult.getChannels());
                 systemAuditResult.setErratas(auditWithChannelsResult.getErratas());
+                systemAuditResult.setScannedWithOVAL(true);
             }
             else {
                 systemAuditResult = auditWithChannelsResult;
+                systemAuditResult.setScannedWithOVAL(false);
             }
 
             if (patchStatuses.contains(systemAuditResult.getPatchStatus())) {
@@ -117,15 +118,12 @@ public class CVEAuditManagerOVAL {
                         systemAuditResult.getSystemName(),
                         systemAuditResult.getPatchStatus(),
                         systemAuditResult.getChannels(),
-                        systemAuditResult.getErratas()));
+                        systemAuditResult.getErratas(),
+                        systemAuditResult.isScannedWithOVAL()));
             }
         }
 
         return result;
-    }
-
-    private static boolean isCVEIdentifierUnknown(String cveIdentifier) {
-        return !OVALCachingFactory.canAuditCVE(cveIdentifier);
     }
 
     /**
@@ -134,9 +132,12 @@ public class CVEAuditManagerOVAL {
      * @param clientServer the server to check
      * @return {@code True}
      * */
-    public static boolean doesSupportOVALAuditing(Server clientServer) {
-        // TODO: check if OVAL is synced and client product is support .e.g. Red Hat, Debian, Ubuntu or SUSE
-        return true;
+    public static boolean checkOVALAvailability(Server clientServer) {
+        return OVALCachingFactory.checkOVALAvailability(clientServer.getCpe());
+    }
+
+    private static boolean isCVEIdentifierUnknown(String cveIdentifier) {
+        return !OVALCachingFactory.canAuditCVE(cveIdentifier);
     }
 
     /**
@@ -318,6 +319,7 @@ public class CVEAuditManagerOVAL {
         CVEAuditManager.populateCVEChannels();
     }
 
+    // TODO: Sync OVAL of registered clients only
     static List<OVALProduct> productsToSync = new ArrayList<>();
     static {
         /*productsToSync.add(new OVALProduct(OsFamily.openSUSE_LEAP, "15.4"));*/
