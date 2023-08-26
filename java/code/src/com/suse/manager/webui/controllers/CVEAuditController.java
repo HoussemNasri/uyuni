@@ -22,31 +22,24 @@ import static com.suse.manager.webui.utils.SparkApplicationHelper.withUserPrefer
 import static spark.Spark.get;
 import static spark.Spark.post;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import com.redhat.rhn.common.localization.LocalizationService;
-import com.redhat.rhn.common.util.TimeUtils;
 import com.redhat.rhn.domain.user.User;
-import com.redhat.rhn.manager.audit.*;
+import com.redhat.rhn.manager.audit.CVEAuditImage;
+import com.redhat.rhn.manager.audit.CVEAuditManagerOVAL;
+import com.redhat.rhn.manager.audit.CVEAuditServer;
+import com.redhat.rhn.manager.audit.CVEAuditSystem;
+import com.redhat.rhn.manager.audit.PatchStatus;
+import com.redhat.rhn.manager.audit.UnknownCVEIdentifierException;
 import com.redhat.rhn.manager.rhnset.RhnSetDecl;
 
 import com.suse.manager.webui.utils.gson.ResultJson;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.suse.oval.OVALCachingFactory;
-import com.suse.oval.OsFamily;
-import com.suse.oval.OvalParser;
-import com.suse.oval.manager.OvalObjectManager;
-import com.suse.oval.manager.OvalStateManager;
-import com.suse.oval.manager.OvalTestManager;
-import com.suse.oval.ovaltypes.DefinitionClassEnum;
-import com.suse.oval.ovaltypes.DefinitionType;
-import com.suse.oval.ovaltypes.OvalRootType;
-import com.suse.oval.vulnerablepkgextractor.VulnerablePackagesExtractors;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -55,7 +48,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import spark.ModelAndView;
 import spark.Request;
 import spark.Response;
@@ -142,9 +134,6 @@ public class CVEAuditController {
      * @return the result JSON object
      */
     public static Object cveAudit(Request req, Response res, User user) {
-        OvalParser ovalParser = new OvalParser();
-        OvalRootType rootType = ovalParser.parse(new File("/var/log/rhn/ovals/rhel-8.xml"));
-
         CVEAuditRequest cveAuditRequest = GSON.fromJson(req.body(), CVEAuditRequest.class);
         try {
 
