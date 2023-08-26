@@ -24,8 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class OVALCachingFactory extends HibernateFactory {
     private static final Logger LOG = LogManager.getLogger(OVALCachingFactory.class);
@@ -94,15 +92,6 @@ public class OVALCachingFactory extends HibernateFactory {
             vulnerablePackage.setFixVersion((String) row.get("vulnerablepkgfixversion"));
             return vulnerablePackage;
         }).collect(Collectors.toList());
-    }
-
-    private static <T> Stream<List<T>> toBatches(List<T> source) {
-        int size = source.size();
-        if (size == 0)
-            return Stream.empty();
-        int fullChunks = (size - 1) / BATCH_SIZE;
-        return IntStream.range(0, fullChunks + 1).mapToObj(
-                n -> source.subList(n * 60, n == fullChunks ? size : (n + 1) * 60));
     }
 
     @Override
