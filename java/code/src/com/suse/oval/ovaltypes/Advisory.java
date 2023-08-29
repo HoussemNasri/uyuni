@@ -36,8 +36,9 @@ public class Advisory {
     @XmlElement(name = "affected", namespace = "http://oval.mitre.org/XMLSchema/oval-definitions-5")
     private AdvisoryAffectedType affected;
 
-    public void setAffectedCpeList(AffectedCpeList affectedCpeListIn) {
-        this.affectedCpeList = affectedCpeListIn;
+    public void setAffectedCpeList(List<String> affectedCpeListIn) {
+        this.affectedCpeList = new AffectedCpeList();
+        this.affectedCpeList.setCpeList(affectedCpeListIn);
     }
 
     public List<String> getAffectedCpeList() {
