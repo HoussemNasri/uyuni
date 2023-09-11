@@ -84,6 +84,9 @@ import com.suse.cloud.domain.PaygDimensionComputation;
 import com.suse.cloud.domain.PaygDimensionResult;
 import com.suse.manager.model.maintenance.MaintenanceCalendar;
 import com.suse.manager.model.maintenance.MaintenanceSchedule;
+import com.suse.oval.db.OVALPlatform;
+import com.suse.oval.db.OVALPlatformVulnerablePackage;
+import com.suse.oval.db.OVALVulnerablePackage;
 
 import java.util.List;
 
@@ -167,7 +170,10 @@ public class AnnotationRegistry {
         RecurringInternalState.class,
         InternalState.class,
         PaygDimensionComputation.class,
-        PaygDimensionResult.class
+        PaygDimensionResult.class,
+        OVALPlatform.class,
+        OVALVulnerablePackage.class,
+        OVALPlatformVulnerablePackage.class
     );
 
     /**
