@@ -15,7 +15,7 @@
 
 package com.suse.oval.manager;
 
-import com.suse.oval.parser.OVALResourcesResult;
+import com.suse.oval.parser.OVALResources;
 import com.suse.oval.ovaltypes.ObjectType;
 import com.suse.oval.ovaltypes.OvalRootType;
 import com.suse.oval.ovaltypes.StateType;
@@ -39,7 +39,7 @@ public class OVALResourcesCache {
         this.objectManager = new OvalObjectManager(rootType.getObjects());
     }
 
-    public OVALResourcesCache(OVALResourcesResult resourcesResult) {
+    public OVALResourcesCache(OVALResources resourcesResult) {
         this.stateManager = new OvalStateManager(resourcesResult.getStates());
         this.testManager = new OvalTestManager(resourcesResult.getTests());
         this.objectManager = new OvalObjectManager(resourcesResult.getObjects());

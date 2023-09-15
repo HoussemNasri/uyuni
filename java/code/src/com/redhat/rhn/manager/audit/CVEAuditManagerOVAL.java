@@ -29,11 +29,12 @@ import com.suse.oval.ShallowSystemPackage;
 
 import com.suse.oval.OVALCleaner;
 import com.suse.oval.OsFamily;
-import com.suse.oval.OvalParser;
 import com.suse.oval.config.OVALConfigLoader;
 import com.suse.oval.ovaldownloader.OVALDownloadResult;
 import com.suse.oval.ovaldownloader.OVALDownloader;
 import com.suse.oval.ovaltypes.OvalRootType;
+import com.suse.oval.parser.OVALResources;
+import com.suse.oval.parser.OvalParser;
 import com.suse.oval.vulnerablepkgextractor.VulnerablePackage;
 
 import org.apache.logging.log4j.LogManager;
@@ -345,27 +346,33 @@ public class CVEAuditManagerOVAL {
             LOG.warn("OVAL patch file: " + downloadResult.getPatchFile().map(File::getAbsoluteFile).orElse(null));
 
             downloadResult.getVulnerabilityFile().ifPresent(ovalVulnerabilityFile -> {
-                OvalParser ovalParser = new OvalParser();
-                OvalRootType ovalRoot = ovalParser.parse(ovalVulnerabilityFile);
-
-                LOG.warn("Saving Vulnerability OVAL for {} {}", product.getOsFamily(), product.getOsVersion());
-
-                OVALCleaner.cleanup(ovalRoot, product.getOsFamily(), product.getOsVersion());
-                OVALCachingFactory.savePlatformsVulnerablePackages(ovalRoot);
+                LOG.warn("Syncing Vulnerability OVAL for {} {}",
+                        product.getOsFamily(), product.getOsVersion());
+                syncOVALFromFile(product, ovalVulnerabilityFile);
             });
 
             downloadResult.getPatchFile().ifPresent(patchFile -> {
-                OvalParser ovalParser = new OvalParser();
-                OvalRootType ovalRoot = ovalParser.parse(patchFile);
-
-                LOG.warn("Saving Patch OVAL for {} {}", product.getOsFamily(), product.getOsVersion());
-
-                OVALCleaner.cleanup(ovalRoot, product.getOsFamily(), product.getOsVersion());
-                OVALCachingFactory.savePlatformsVulnerablePackages(ovalRoot);
+                LOG.warn("Syncing Patch OVAL for {} {}", product.getOsFamily(), product.getOsVersion());
+                syncOVALFromFile(product, patchFile);
             });
 
             LOG.warn("Saving OVAL finished");
         }
+    }
+
+    private static void syncOVALFromFile(OVALProduct product, File ovalVulnerabilityFile) {
+        OvalParser ovalParser = new OvalParser();
+        OVALResources ovalResources = ovalParser.parseResources(ovalVulnerabilityFile);
+        ovalParser.parseDefinitionsInBulk(ovalVulnerabilityFile, (definitionsBulk) -> {
+            OvalRootType ovalRoot = new OvalRootType();
+            ovalRoot.setDefinitions(definitionsBulk);
+            ovalRoot.setTests(ovalResources.getTests());
+            ovalRoot.setObjects(ovalResources.getObjects());
+            ovalRoot.setStates(ovalResources.getStates());
+
+            OVALCleaner.cleanup(ovalRoot, product.getOsFamily(), product.getOsVersion());
+            OVALCachingFactory.savePlatformsVulnerablePackages(ovalRoot);
+        });
     }
 
     /**
