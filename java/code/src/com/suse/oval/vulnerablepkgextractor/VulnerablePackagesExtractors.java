@@ -16,7 +16,7 @@
 package com.suse.oval.vulnerablepkgextractor;
 
 import com.suse.oval.OsFamily;
-import com.suse.oval.manager.OVALLookupHelper;
+import com.suse.oval.manager.OVALResourcesCache;
 import com.suse.oval.ovaltypes.DefinitionClassEnum;
 import com.suse.oval.ovaltypes.DefinitionType;
 import com.suse.oval.vulnerablepkgextractor.redhat.RedHatVulnerablePackageExtractorFromPatchDefinition;
@@ -38,14 +38,14 @@ public class VulnerablePackagesExtractors {
      * @return a vulnerable package extractor instance
      * */
     public static VulnerablePackagesExtractor create(DefinitionType definition, OsFamily osFamily,
-                                                     OVALLookupHelper ovalLookupHelper) {
+                                                     OVALResourcesCache ovalResourcesCache) {
         switch (osFamily) {
             case openSUSE_LEAP:
             case openSUSE_LEAP_MICRO:
             case SUSE_LINUX_ENTERPRISE_SERVER:
             case SUSE_LINUX_ENTERPRISE_DESKTOP:
             case SUSE_LINUX_ENTERPRISE_MICRO:
-                return new SUSEVulnerablePackageExtractor(definition, ovalLookupHelper);
+                return new SUSEVulnerablePackageExtractor(definition, ovalResourcesCache);
             case DEBIAN:
                 return new DebianVulnerablePackagesExtractor(definition);
             case REDHAT_ENTERPRISE_LINUX:
