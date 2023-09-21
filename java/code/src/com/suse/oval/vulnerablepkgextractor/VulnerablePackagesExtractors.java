@@ -34,7 +34,7 @@ public class VulnerablePackagesExtractors {
      *
      * @param definition the definition to extract vulnerable packages from
      * @param osFamily the os family
-     * @param ovalLookupHelper a helper class to lookup OVAL resources efficiently
+     * @param ovalResourcesCache a helper class to lookup OVAL resources efficiently
      * @return a vulnerable package extractor instance
      * */
     public static VulnerablePackagesExtractor create(DefinitionType definition, OsFamily osFamily,
@@ -55,6 +55,8 @@ public class VulnerablePackagesExtractors {
                 else if (definition.getDefinitionClass() == DefinitionClassEnum.PATCH) {
                     return new RedHatVulnerablePackageExtractorFromPatchDefinition(definition);
                 }
+            case UBUNTU:
+                return new UbuntuVulnerablePackageExtractor(definition);
             default:
                 throw new IllegalArgumentException(
                         "Cannot find any vulnerable packages extractor implementation for " + osFamily);

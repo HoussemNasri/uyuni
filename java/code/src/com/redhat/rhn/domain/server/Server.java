@@ -2505,6 +2505,9 @@ public class Server extends BaseDomainHelper implements Identifiable {
         else if (isSLEMicro() && OsFamily.SUSE_LINUX_ENTERPRISE_MICRO.isSupportedRelease(getRelease())) {
             return Optional.of(new CVEAuditManagerOVAL.OVALProduct(OsFamily.SUSE_LINUX_ENTERPRISE_MICRO, getRelease()));
         }
+        else if (isUbuntu() && OsFamily.UBUNTU.isSupportedRelease(getRelease())) {
+            return Optional.of(new CVEAuditManagerOVAL.OVALProduct(OsFamily.UBUNTU, getRelease()));
+        }
 
         return Optional.empty();
     }

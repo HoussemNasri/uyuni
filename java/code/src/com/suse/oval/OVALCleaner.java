@@ -58,8 +58,7 @@ public class OVALCleaner {
             root.getDefinitions().removeIf(def -> def.getId().contains("unaffected"));
         }
 
-        // Debian OVAL files could contain patch definitions, but we're only interested in vulnerability definitions
-        if (osFamily == OsFamily.DEBIAN) {
+        if (osFamily == OsFamily.DEBIAN || osFamily == OsFamily.UBUNTU) {
             root.getDefinitions().removeIf(def -> def.getDefinitionClass() != DefinitionClassEnum.VULNERABILITY);
         }
 
@@ -91,6 +90,7 @@ public class OVALCleaner {
             case SUSE_LINUX_ENTERPRISE_SERVER:
             case SUSE_LINUX_ENTERPRISE_DESKTOP:
             case SUSE_LINUX_ENTERPRISE_MICRO:
+            case UBUNTU:
                 List<String> cves =
                         definition.getMetadata().getAdvisory().map(Advisory::getCveList)
                                 .orElse(Collections.emptyList())
